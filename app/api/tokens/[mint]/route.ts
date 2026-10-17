@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { INITIAL_TOKENS } from '@/lib/mockTokens';
+import { createServerClient } from '@/lib/supabase/server';
 
 export async function GET(
   req: NextRequest,
@@ -7,7 +7,11 @@ export async function GET(
 ) {
   try {
     const { mint } = await params;
-    const token = INITIAL_TOKENS.find(t => t.mint === mint);
+    const { data: token, error } = await createServerClient().from('tokens').select('*').eq('mint', mint).maybeSingle();
+
+    if (error) {
+      return NextResponse.json({ success: false, error: 'Unable to load token' }, { status: 500 });
+    }
 
     if (!token) {
       return NextResponse.json({ success: false, error: 'Token not found' }, { status: 404 });

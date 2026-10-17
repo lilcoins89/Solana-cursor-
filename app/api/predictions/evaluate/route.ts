@@ -1,24 +1,24 @@
 import { GoogleGenAI } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
-import { INITIAL_TOKENS } from '@/lib/mockTokens';
+import { createServerClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
   try {
     const { mint, customFeatures } = await req.json();
-    const token = INITIAL_TOKENS.find(t => t.mint === mint) || INITIAL_TOKENS[0];
+    const { data: token, error: tokenError } = await createServerClient().from('tokens').select('*').eq('mint', mint).maybeSingle();
+    if (tokenError || !token) return NextResponse.json({ success: false, error: 'Token not found' }, { status: 404 });
 
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
-      // Serious deterministic quantitative model fallback
-      const volatilityFactor = token.priceChange24h / 100;
-      const liquidityWeight = Math.min(1, token.liquidity / 5000000);
-      const riskPenalty = token.riskScore / 200;
+      const volatilityFactor = Number(token.price_change_24h) / 100;
+      const liquidityWeight = Math.min(1, Number(token.liquidity) / 5000000);
+      const riskPenalty = Number(token.risk_score) / 200;
 
       const direction = volatilityFactor > 0.05 ? 'bullish' : volatilityFactor < -0.05 ? 'bearish' : 'sideways';
       const confidence = Math.round(Math.max(45, Math.min(95, (50 + volatilityFactor * 40 + liquidityWeight * 20 - riskPenalty * 30))));
       const expectedMove = Number((volatilityFactor * 35).toFixed(2));
-      const targetPrice = Number((token.price * (1 + expectedMove / 100)).toFixed(8));
+      const targetPrice = Number((Number(token.price) * (1 + expectedMove / 100)).toFixed(8));
 
       return NextResponse.json({
         success: true,
@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
           confidence,
           expectedMovePercent: expectedMove,
           targetPrice60m: targetPrice,
-          priceLow60m: Number((token.price * 0.94).toFixed(8)),
-          priceHigh60m: Number((token.price * 1.18).toFixed(8)),
+          priceLow60m: Number((Number(token.price) * 0.94).toFixed(8)),
+          priceHigh60m: Number((Number(token.price) * 1.18).toFixed(8)),
           probability: {
             rising: direction === 'bullish' ? 76 : direction === 'bearish' ? 18 : 42,
             falling: direction === 'bearish' ? 72 : direction === 'bullish' ? 15 : 35,
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
             liquidityDepth: 0.22,
             historicalVolatility: 0.16
           },
-          riskWarnings: token.riskScore > 50 ? ['High deployer risk score detected', 'Elevated slippage probability'] : ['Stable order book depth'],
+          riskWarnings: Number(token.risk_score) > 50 ? ['High deployer risk score detected', 'Elevated slippage probability'] : ['Stable order book depth'],
           keyFactors: ['Net positive AMM inflow over past 30m', 'Holding cluster stability verified'],
           updatedAt: new Date().toISOString()
         }
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    const prompt = `You are a serious institutional-grade quantitative trading and memecoin prediction system. Analyze token ${token.name} (${token.symbol}) with price $${token.price}, 24h vol $${token.volume24h}, liquidity $${token.liquidity}, risk score ${token.riskScore}/100.
+    const prompt = `You are a serious institutional-grade quantitative trading and memecoin prediction system. Analyze token ${token.name} (${token.symbol}) with price $${token.price}, 24h vol $${token.volume_24h}, liquidity $${token.liquidity}, risk score ${token.risk_score}/100.
 Return strict JSON:
 {
   "direction": "bullish" | "bearish" | "sideways",
