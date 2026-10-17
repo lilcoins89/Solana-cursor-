@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, TrendingUp, Bell, Bookmark, Zap, Activity, Wallet, Cpu, Compass, Award, MessageSquareCode } from 'lucide-react';
+import { ShieldCheck, TrendingUp, Bell, Bookmark, Zap, Activity, Wallet, Cpu, Compass, Award, MessageSquareCode, Sliders } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -53,6 +53,17 @@ export default function Navbar() {
             >
               <TrendingUp className="w-3.5 h-3.5" />
               <span>Scanner</span>
+            </Link>
+            <Link
+              href="/prediction-studio"
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center space-x-1.5 ${
+                pathname === '/prediction-studio'
+                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Quant Studio</span>
             </Link>
             <Link
               href="/discovery"

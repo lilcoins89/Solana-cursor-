@@ -3,6 +3,7 @@ import { useState, use, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PriceChart from '@/components/PriceChart';
+import PredictiveHeatmap from '@/components/PredictiveHeatmap';
 import { INITIAL_TOKENS, TokenData } from '@/lib/mockTokens';
 import { 
   ShieldCheck, ShieldAlert, Sparkles, TrendingUp, TrendingDown, 
@@ -324,6 +325,11 @@ export default function TokenDetailPage({ params }: { params: Promise<{ mint: st
                 </div>
               ) : null}
             </div>
+
+            {/* Predictive Heatmap Widget */}
+            {hasSufficientData && prediction && (
+              <PredictiveHeatmap currentPrice={token.price} prediction={prediction} />
+            )}
 
             {/* Holder Distribution */}
             <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6">
