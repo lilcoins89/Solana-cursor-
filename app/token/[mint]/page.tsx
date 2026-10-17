@@ -7,7 +7,7 @@ import PredictiveHeatmap from '@/components/PredictiveHeatmap';
 import { INITIAL_TOKENS, TokenData } from '@/lib/mockTokens';
 import { 
   ShieldCheck, ShieldAlert, Sparkles, TrendingUp, TrendingDown, 
-  Lock, Unlock, CheckCircle2, AlertTriangle, Send, Cpu, ArrowRightLeft, Users, Bell
+  Lock, Unlock, CheckCircle2, AlertTriangle, Send, Cpu, ArrowRightLeft, Users, Bell, Target, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
 export default function TokenDetailPage({ params }: { params: Promise<{ mint: string }> }) {
@@ -24,6 +24,11 @@ export default function TokenDetailPage({ params }: { params: Promise<{ mint: st
   const [chatLoading, setChatLoading] = useState(false);
   const [swapAmount, setSwapAmount] = useState('1');
   const [alertStatus, setAlertStatus] = useState<string | null>(null);
+
+  // Price Target Alert Threshold state
+  const [targetPriceInput, setTargetPriceInput] = useState(String(token.price * 1.15));
+  const [priceAlertActive, setPriceAlertActive] = useState(false);
+  const [priceAlertTriggered, setPriceAlertTriggered] = useState(false);
 
   const predictionRef = useRef(prediction);
   useEffect(() => {
@@ -48,6 +53,24 @@ export default function TokenDetailPage({ params }: { params: Promise<{ mint: st
       if (data.success && data.prediction) {
         const newPred = data.prediction;
         setPrediction(newPred);
+
+        // Check user-defined price target threshold
+        if (priceAlertActive && !priceAlertTriggered) {
+          const targetNum = parseFloat(targetPriceInput);
+          if (!isNaN(targetNum) && token.price >= targetNum) {
+            setPriceAlertTriggered(true);
+            setAlertStatus(`🎯 PRICE TARGET REACHED: $${token.symbol} hit your target of $${targetNum}!`);
+            if (typeof window !== 'undefined' && 'Notification' in window) {
+              if (Notification.permission === 'granted') {
+                new Notification(`Price Target Reached: $${token.symbol}`, {
+                  body: `Token price is now $${token.price}, crossing your target of $${targetNum}!`
+                });
+              } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission();
+              }
+            }
+          }
+        }
 
         // Save forecast to immutable history store
         await fetch('/api/forecasts/history', {
@@ -358,8 +381,48 @@ export default function TokenDetailPage({ params }: { params: Promise<{ mint: st
             </div>
           </div>
 
-          {/* Right Column: Risk Audit, Swap Calculator & AI Chat */}
+          {/* Right Column: Alert Threshold, Risk Audit, Swap Calculator & AI Chat */}
           <div className="space-y-8">
+            {/* Price Target Alert Threshold Card */}
+            <div className="bg-slate-900/60 border border-cyan-500/30 rounded-3xl p-6 relative overflow-hidden shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-white text-base flex items-center space-x-2">
+                  <Target className="w-5 h-5 text-cyan-400" />
+                  <span>Price Target Alert Threshold</span>
+                </h3>
+                <button
+                  onClick={() => setPriceAlertActive(!priceAlertActive)}
+                  className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                >
+                  {priceAlertActive ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8 text-slate-600" />}
+                </button>
+              </div>
+
+              <div className="space-y-3 font-mono text-xs">
+                <div>
+                  <label className="block text-slate-400 mb-1.5 uppercase">Target Price ($)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={targetPriceInput}
+                    onChange={(e) => setTargetPriceInput(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white font-mono text-sm outline-none focus:border-cyan-500"
+                  />
+                </div>
+                <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 flex items-center justify-between text-slate-400">
+                  <span>Status:</span>
+                  <span className={priceAlertActive ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
+                    {priceAlertActive ? 'Active Push Alert' : 'Disabled'}
+                  </span>
+                </div>
+                {priceAlertTriggered && (
+                  <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 rounded-xl font-bold">
+                    Target of ${targetPriceInput} reached!
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Risk Audit Card */}
             <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6">
               <div className="flex items-center justify-between mb-6">
