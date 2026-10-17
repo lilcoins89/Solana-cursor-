@@ -1,18 +1,35 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { INITIAL_TOKENS, TokenData } from '@/lib/mockTokens';
+import { createClient } from '@/lib/supabase/client';
+import { mapDbToken } from '@/lib/tokenMapper';
+import type { TokenData } from '@/lib/mockTokens';
 import { Cpu, Sparkles, Sliders, ShieldCheck, Activity, BarChart2, CheckCircle2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 export default function PredictionStudioPage() {
-  const [selectedToken, setSelectedToken] = useState<TokenData>(INITIAL_TOKENS[0]);
-  const [evaluationResult, setEvaluationResult] = useState<any>(INITIAL_TOKENS[0].prediction);
+  const [tokens, setTokens] = useState<TokenData[]>([]);
+  const [selectedToken, setSelectedToken] = useState<TokenData | null>(null);
+  const [evaluationResult, setEvaluationResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [modelType, setModelType] = useState('Ensemble Hybrid Quant v4.2');
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function loadTokens() {
+      const { data } = await supabase.from('tokens').select('*').order('updated_at', { ascending: false });
+      const liveTokens = (data ?? []).map((token: Record<string, unknown>) => mapDbToken(token));
+      setTokens(liveTokens);
+      setSelectedToken(liveTokens[0] ?? null);
+    }
+    loadTokens();
+    const channel = supabase.channel('prediction-tokens-live').on('postgres_changes', { event: '*', schema: 'public', table: 'tokens' }, loadTokens).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const runQuantEvaluation = async () => {
+    if (!selectedToken) return;
     setLoading(true);
     try {
       const res = await fetch('/api/predictions/evaluate', {
@@ -65,9 +82,9 @@ export default function PredictionStudioPage() {
           <div>
             <label className="block text-slate-400 mb-2 uppercase">Select Token</label>
             <select
-              value={selectedToken.mint}
+              value={selectedToken?.mint ?? ''}
               onChange={(e) => {
-                const found = INITIAL_TOKENS.find(t => t.mint === e.target.value);
+                const found = tokens.find(t => t.mint === e.target.value);
                 if (found) {
                   setSelectedToken(found);
                   setEvaluationResult(found.prediction);
@@ -75,7 +92,7 @@ export default function PredictionStudioPage() {
               }}
               className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 outline-none focus:border-cyan-500"
             >
-              {INITIAL_TOKENS.map(t => (
+              {tokens.map(t => (
                 <option key={t.mint} value={t.mint}>{t.name} (${t.symbol})</option>
               ))}
             </select>
@@ -107,6 +124,7 @@ export default function PredictionStudioPage() {
         </div>
 
         {/* Evaluation Results */}
+        {!selectedToken && <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-10 text-center text-slate-400">No live tokens are available yet.</div>}
         {evaluationResult && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
