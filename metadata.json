@@ -1,0 +1,6 @@
+{
+  "name": "Dexintelligence - Solana Memecoin Intelligence & AI Prediction Engine",
+  "description": "Production-grade Solana memecoin intelligence platform with real-time token discovery, deep risk scoring, liquidity verification, watchlists, alert engine, and AI-powered 1-hour price prediction engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
