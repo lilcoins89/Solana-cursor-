@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import TokenCard from '@/components/TokenCard';
 import { TokenData, INITIAL_TOKENS } from '@/lib/mockTokens';
-import { Search, TrendingUp, ShieldAlert, Zap, Sparkles, Filter, RefreshCw, BarChart3, Lock } from 'lucide-react';
+import { Search, ShieldAlert, Sparkles } from 'lucide-react';
 
 export default function Home() {
   const [tokens, setTokens] = useState<TokenData[]>(INITIAL_TOKENS);
@@ -38,24 +38,25 @@ export default function Home() {
   const averageRisk = Math.round(tokens.reduce((acc, t) => acc + t.riskScore, 0) / tokens.length);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-cyan-500 selection:text-white">
+    <div className="min-h-screen text-slate-100 flex flex-col">
       <Navbar />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {/* Hero Banner */}
-        <div className="relative rounded-3xl bg-gradient-to-r from-cyan-950/60 via-indigo-950/60 to-purple-950/60 border border-cyan-500/30 p-8 md:p-12 mb-10 overflow-hidden shadow-2xl">
-          <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative rounded-[2rem] bg-gradient-to-br from-[#11182a] via-[#10131d] to-[#11130e] border border-white/10 p-7 md:p-12 mb-10 overflow-hidden shadow-2xl shadow-black/30">
+          <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-[#b7ff4a]/10 rounded-full blur-3xl pointer-events-none pulse-glow" />
+          <div className="absolute right-16 top-12 h-32 w-32 rounded-full border border-[#8167ff]/30 bg-[#8167ff]/10 blur-sm pointer-events-none" />
           
           <div className="relative z-10 max-w-2xl">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono mb-4">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>AI-Powered 60-Minute Price Forecast Engine</span>
+              <span>LIVE / Solana intelligence layer</span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-4">
-              Solana Memecoin Intelligence & Risk Audit
+              Find the signal before the crowd.
             </h1>
             <p className="text-slate-300 text-sm md:text-base mb-6 leading-relaxed">
-              Real-time token discovery, holder distribution analysis, deployer verification, liquidity-lock checks, and rolling next-60-minute quantitative price predictions powered by Gemini AI.
+              SignalOS turns noisy on-chain activity into a clear, actionable view of what is moving, why it matters, and where the risk is hiding.
             </p>
 
             {/* Quick Stats Grid */}
@@ -66,7 +67,7 @@ export default function Home() {
               </div>
               <div>
                 <span className="text-xs text-slate-400 block uppercase">24h Volume</span>
-                <span className="text-xl font-bold text-cyan-400">${(totalVolume / 1000000).toFixed(1)}M</span>
+                <span className="text-xl font-bold text-[#b7ff4a]">${(totalVolume / 1000000).toFixed(1)}M</span>
               </div>
               <div>
                 <span className="text-xs text-slate-400 block uppercase">Avg Risk Score</span>
@@ -74,7 +75,7 @@ export default function Home() {
               </div>
               <div>
                 <span className="text-xs text-slate-400 block uppercase">AI Model</span>
-                <span className="text-xl font-bold text-purple-400">Gemini 3.8</span>
+                <span className="text-xl font-bold text-[#b7ff4a]">Signal v3.5</span>
               </div>
             </div>
           </div>

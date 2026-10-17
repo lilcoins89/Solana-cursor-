@@ -26,7 +26,7 @@ export default function Navbar() {
               </div>
               <div>
                 <span className="font-black text-xl tracking-wider bg-gradient-to-r from-cyan-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
-                  DEXINTELLIGENCE
+                  SIGNALOS
                 </span>
                 <span className="block text-[10px] text-cyan-400 font-mono tracking-widest uppercase">
                   Solana AI Engine v3.5

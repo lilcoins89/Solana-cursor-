@@ -2,17 +2,17 @@ import type {Metadata} from 'next';
 import './globals.css'; // Global styles
 
 export const metadata: Metadata = {
-  title: 'My Google AI Studio App',
-  description: 'An application built with Google AI Studio.',
+  title: 'SignalOS — Solana market intelligence',
+  description: 'A real-time intelligence workspace for discovering, auditing, and forecasting Solana tokens.',
   openGraph: {
-    title: 'My Google AI Studio App',
-    description: 'An application built with Google AI Studio.',
+    title: 'SignalOS — Solana market intelligence',
+    description: 'Discover stronger signals before the market catches up.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'My Google AI Studio App',
-    description: 'An application built with Google AI Studio.',
+    title: 'SignalOS — Solana market intelligence',
+    description: 'Discover stronger signals before the market catches up.',
   },
 };
 
