@@ -1,17 +1,54 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import TokenCard from '@/components/TokenCard';
-import { TokenData, INITIAL_TOKENS } from '@/lib/mockTokens';
+import type { TokenData } from '@/lib/mockTokens';
+import { mapDbToken } from '@/lib/tokenMapper';
+import { createClient } from '@/lib/supabase/client';
 import { Search, ShieldAlert, Sparkles } from 'lucide-react';
 
 export default function Home() {
-  const [tokens, setTokens] = useState<TokenData[]>(INITIAL_TOKENS);
+  const supabase = createClient();
+  const [liveRows, setLiveRows] = useState<Record<string, unknown>[]>([]);
+  const [error, setError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const tokens = useMemo<TokenData[]>(() => liveRows.map(mapDbToken), [liveRows]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    const loadLaunches = async () => {
+      try {
+        const response = await fetch('/api/tokens', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Unable to load launch data');
+        const payload = await response.json();
+        if (active) { setLiveRows(payload.tokens ?? []); setError(false); }
+      } catch { if (active) setError(true); } finally { if (active) setIsLoading(false); }
+    };
+    void loadLaunches();
+    const timer = window.setInterval(loadLaunches, 60000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, []);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'volume' | 'risk' | 'priceChange' | 'newest'>('volume');
-  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('tokens-launch-window')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tokens' }, async () => {
+        const response = await fetch('/api/tokens', { cache: 'no-store' });
+        if (response.ok) {
+          const payload = await response.json();
+          setLiveRows(payload.tokens ?? []);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [supabase]);
 
   // Filter & Sort tokens
   const filteredTokens = tokens.filter(token => {
@@ -35,7 +72,7 @@ export default function Home() {
   });
 
   const totalVolume = tokens.reduce((acc, t) => acc + t.volume24h, 0);
-  const averageRisk = Math.round(tokens.reduce((acc, t) => acc + t.riskScore, 0) / tokens.length);
+  const averageRisk = tokens.length ? Math.round(tokens.reduce((acc, t) => acc + t.riskScore, 0) / tokens.length) : 0;
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col">
@@ -58,6 +95,7 @@ export default function Home() {
             <p className="text-slate-300 text-sm md:text-base mb-6 leading-relaxed">
               SignalOS turns noisy on-chain activity into a clear, actionable view of what is moving, why it matters, and where the risk is hiding.
             </p>
+            <p className="text-xs font-mono text-[#b7ff4a] mb-6">LIVE DATASET: LAUNCHED 24–48 HOURS AGO</p>
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-800/80 font-mono">
@@ -106,6 +144,7 @@ export default function Home() {
               <option value="volume">24h Volume</option>
               <option value="risk">Lowest Risk</option>
               <option value="priceChange">Top Gainers</option>
+              <option value="newest">Newest launches</option>
             </select>
           </div>
         </div>
@@ -128,7 +167,19 @@ export default function Home() {
         </div>
 
         {/* Token Grid */}
-        {filteredTokens.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-20 bg-slate-900/40 rounded-3xl border border-slate-800">
+            <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-white mb-2">Scanning the launch window</h3>
+            <p className="text-sm text-slate-400">Loading tokens launched 24–48 hours ago.</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 bg-slate-900/40 rounded-3xl border border-red-500/20">
+            <ShieldAlert className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-white mb-2">Live engine unavailable</h3>
+            <p className="text-sm text-slate-400">The database could not be reached. No sample tokens are shown.</p>
+          </div>
+        ) : filteredTokens.length === 0 ? (
           <div className="text-center py-20 bg-slate-900/40 rounded-3xl border border-slate-800">
             <ShieldAlert className="w-12 h-12 text-slate-600 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-white mb-2">No Tokens Found</h3>
